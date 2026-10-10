@@ -1,5 +1,10 @@
 # jev-melee
 
+Run repeated local Super Smash Bros. Melee matches through Slippi Dolphin and
+libmelee. The goal is to let Jev, TypeSafe AI's System One model, control a character;
+the current runner handles the match lifecycle while the character stays idle.
+No TypeSafe credentials or model calls are needed yet.
+
 ## Python setup
 
 Requires Python 3.10 or newer. [Libmelee](https://github.com/vladfi1/libmelee) is published on PyPI as `melee` and pinned in `requirements.txt`.
@@ -87,13 +92,7 @@ for this initial runner. Shutdown disconnects controllers, stops its Dolphin
 process, and removes the temporary user directory, including on failures and Ctrl+C.
 Run one instance at a time: Windows controller pipe names and the Slippi port are fixed.
 
-## Gameplay integration and verification
-
-`jev_melee/loop.py` owns the lifecycle. `MatchLoop` accepts a
-`policy(gamestate, controller)` callback, invoked once per received gameplay frame,
-including sudden death. Replace `idle_policy` with the future Jev decision policy;
-menu handling stays in the outer loop. No TypeSafe credentials or model calls are
-needed for this milestone.
+## Verification
 
 Run the automated tests after installing requirements:
 
@@ -101,7 +100,18 @@ Run the automated tests after installing requirements:
 python -m unittest discover -s tests -v
 ```
 
-Tests exercise repeated matches, CPU readiness, stage re-selection, sudden death,
-match limits, timeouts, and resource cleanup using simulated game states. For live
-verification, run with `--matches 2` and confirm two start/finish log pairs and a
-clean exit. Live verification requires the emulator and game image.
+Tests exercise configuration loading, repeated matches, CPU readiness, stage
+re-selection, sudden death, match limits, timeouts, and resource cleanup using
+simulated game states.
+
+For a live smoke test, run with your saved paths:
+
+```sh
+python -m jev_melee --matches 2
+```
+
+Confirm two start/finish log pairs, stage re-selection between matches, and a clean
+exit. Live verification requires the emulator and game image.
+
+See [AGENTS.md](AGENTS.md) for code organization and instructions for agents
+working on the project.
