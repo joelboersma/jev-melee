@@ -41,6 +41,26 @@ Pass the Dolphin executable or its installation folder and the image explicitly:
 python -m jev_melee --dolphin "C:\path\to\Slippi Dolphin\Dolphin.exe" --iso "C:\path\to\Melee.iso"
 ```
 
+To save these paths, copy the example config once:
+
+```powershell
+Copy-Item jev-melee.example.json jev-melee.local.json
+```
+
+Edit `jev-melee.local.json` with your Dolphin folder or executable and ISO path.
+Use forward slashes in JSON paths, as in the example (backslashes must be doubled).
+The local file is ignored by Git. Then run from the project directory:
+
+```powershell
+python -m jev_melee
+```
+
+The runner reads `jev-melee.local.json` from the current directory automatically.
+Use `--config "C:/path/to/config.json"` to select another file. Relative paths in
+the config are resolved from the config's directory; command-line paths are
+resolved from the current directory. `--dolphin` and `--iso` override saved paths
+individually, so you can temporarily change one without editing the config.
+
 The runner boots Dolphin in a window, navigates to local VS mode, selects Fox on
 port 1 and a level-9 Marth CPU on port 2, and selects Final Destination. The controlled
 character currently stays idle; the CPU plays normally so matches can finish.

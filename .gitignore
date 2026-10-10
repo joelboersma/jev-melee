@@ -1,4 +1,5 @@
 .venv/
 .venv-check/
+jev-melee.local.json
 __pycache__/
 *.py[cod]

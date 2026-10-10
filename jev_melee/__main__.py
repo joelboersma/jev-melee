@@ -1,6 +1,7 @@
 """Run with: python -m jev_melee --dolphin PATH --iso PATH."""
 
 import argparse
+import json
 import logging
 from pathlib import Path
 
@@ -17,10 +18,30 @@ CHARACTERS = [
 ]
 
 
+def load_paths(path: Path) -> dict[str, Path]:
+    """Load saved paths, interpreting relative paths beside the config file."""
+    with path.open(encoding="utf-8-sig") as config_file:
+        data = json.load(config_file)
+    if not isinstance(data, dict):
+        raise ValueError("Config must be a JSON object containing dolphin and/or iso paths.")
+    paths = {}
+    for key in ("dolphin", "iso"):
+        if key not in data:
+            continue
+        value = data[key]
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"Config '{key}' must be a nonempty path string.")
+        saved_path = Path(value).expanduser()
+        paths[key] = saved_path if saved_path.is_absolute() else path.parent / saved_path
+    return paths
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Repeated local Melee matches against a CPU.")
-    parser.add_argument("--dolphin", required=True, type=Path, help="Slippi Dolphin folder or executable")
-    parser.add_argument("--iso", required=True, type=Path, help="Melee NTSC 1.02 game image")
+    parser.add_argument("--config", type=Path,
+                        help="Path config file (default: jev-melee.local.json in the current directory)")
+    parser.add_argument("--dolphin", type=Path, help="Slippi Dolphin folder or executable; overrides config")
+    parser.add_argument("--iso", type=Path, help="Melee NTSC 1.02 game image; overrides config")
     parser.add_argument("--character", type=str.upper, choices=CHARACTERS, default="FOX")
     parser.add_argument("--opponent", type=str.upper,
                         choices=[name for name in CHARACTERS if name != "SHEIK"], default="MARTH")
@@ -35,6 +56,18 @@ def main() -> int:
     parser.add_argument("--menu-timeout", type=float, default=120.0)
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
+    config_path = args.config if args.config is not None else Path("jev-melee.local.json")
+    saved_paths = {}
+    if args.config is not None or config_path.exists():
+        try:
+            saved_paths = load_paths(config_path)
+        except (OSError, ValueError) as error:
+            parser.error(f"Could not load {config_path}: {error}")
+    args.dolphin = args.dolphin if args.dolphin is not None else saved_paths.get("dolphin")
+    args.iso = args.iso if args.iso is not None else saved_paths.get("iso")
+    for key in ("dolphin", "iso"):
+        if getattr(args, key) is None:
+            parser.error(f"Provide --{key} or save '{key}' in {config_path}.")
     if not args.dolphin.exists():
         parser.error("Dolphin path does not exist.")
     if not args.iso.is_file():
